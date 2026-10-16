@@ -1,18 +1,52 @@
 // Vercel entry point. vercel.json rewrites /api/<path> here as /api?__path=<path>.
-import { join } from "node:path";
+// Needs a Postgres connection string, e.g. from Vercel Storage → Neon (sets DATABASE_URL).
 import pg from "pg";
 import { handle } from "../server/router.js";
 import { migrate } from "../server/migrate.js";
+import { MIGRATIONS } from "../server/migrations.gen.js";
 import type { Pool } from "../server/service.js";
+
+class SetupError extends Error {
+  constructor(public stage: string, message: string) {
+    super(message);
+  }
+}
+
+/** Finds the database URL, including prefixed names from Vercel's storage integrations. */
+export function findDatabaseUrl(env: NodeJS.ProcessEnv): { name: string; url: string } | null {
+  const preferred = ["DATABASE_URL", "POSTGRES_URL", "NEON_DATABASE_URL", "STORAGE_URL"];
+  const names = [
+    ...preferred,
+    ...Object.keys(env).filter((k) => /(DATABASE|POSTGRES)_URL$/.test(k) && !preferred.includes(k)).sort(),
+  ];
+  for (const name of names) {
+    const url = env[name];
+    if (url && /^postgres(ql)?:\/\//.test(url)) return { name, url };
+  }
+  return null;
+}
 
 let ready: Promise<Pool> | undefined;
 
 function getPool(): Promise<Pool> {
   ready ??= (async () => {
-    const connectionString = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
-    if (!connectionString) throw new Error("DATABASE_URL is not set. Add a Neon (Postgres) database to this Vercel project.");
-    const pool = new pg.Pool({ connectionString, max: 3 }) as unknown as Pool;
-    await migrate(pool, join(process.cwd(), "netlify/database/migrations"));
+    const found = findDatabaseUrl(process.env);
+    if (!found)
+      throw new SetupError(
+        "missing_database_url",
+        "No database connected. In Vercel: Storage → Create Database → Neon, connect it to this project, then redeploy.",
+      );
+    const pool = new pg.Pool({ connectionString: found.url, max: 3, connectionTimeoutMillis: 10_000 }) as unknown as Pool;
+    try {
+      await pool.query("SELECT 1");
+    } catch (e) {
+      throw new SetupError("database_unreachable", `Couldn't connect to the database in ${found.name}: ${(e as Error).message}`);
+    }
+    try {
+      await migrate(pool, MIGRATIONS);
+    } catch (e) {
+      throw new SetupError("migration_failed", `Database setup failed: ${(e as Error).message}`);
+    }
     return pool;
   })().catch((e) => {
     ready = undefined;
@@ -30,12 +64,17 @@ async function entry(request: Request): Promise<Response> {
     url.pathname = `/api/${path}`;
     request = new Request(url, request);
   }
+  let pool: Pool;
   try {
-    return await handle(request, await getPool());
+    pool = await getPool();
   } catch (e) {
-    console.error(e);
-    return Response.json({ error: { code: "server_error", message: "Server is starting up or misconfigured." } }, { status: 500 });
+    console.error("Swipe Pay setup error:", e);
+    const stage = e instanceof SetupError ? e.stage : "server_error";
+    const message = e instanceof SetupError ? e.message : "Server is misconfigured.";
+    return Response.json({ error: { code: stage, message } }, { status: 503, headers: { "cache-control": "no-store" } });
   }
+  if (url.pathname === "/api/health") return Response.json({ ok: true, database: "connected" });
+  return handle(request, pool);
 }
 
 export const GET = entry;

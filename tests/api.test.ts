@@ -251,3 +251,21 @@ describe("session probe", () => {
     expect((await k("GET", "/api/session")).body.user.username).toBe("kofi.owusu");
   });
 });
+
+describe("vercel setup", () => {
+  test("embedded migrations match the SQL files", async () => {
+    const { MIGRATIONS } = await import("../server/migrations.gen.js");
+    const dir = "./netlify/database/migrations";
+    const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
+    expect(MIGRATIONS.map(([n]) => n)).toEqual(files);
+    for (const [name, sql] of MIGRATIONS) expect(sql).toBe(readFileSync(join(dir, name), "utf8"));
+  });
+
+  test("finds the database URL under Vercel integration names", async () => {
+    const { findDatabaseUrl } = await import("../api/index.js");
+    expect(findDatabaseUrl({})).toBeNull();
+    expect(findDatabaseUrl({ DATABASE_URL: "postgres://a" })?.name).toBe("DATABASE_URL");
+    expect(findDatabaseUrl({ STORAGE_DATABASE_URL: "postgresql://b" })?.name).toBe("STORAGE_DATABASE_URL");
+    expect(findDatabaseUrl({ DATABASE_URL: "", POSTGRES_URL: "postgres://c" })?.name).toBe("POSTGRES_URL");
+  });
+});

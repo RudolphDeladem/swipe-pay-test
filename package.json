@@ -12,7 +12,8 @@
     "typecheck": "tsc -b",
     "test:e2e": "node scripts/e2e.mjs",
     "serve:local": "tsx scripts/serve-local.ts",
-    "build:pages": "tsc -b && VITE_STATIC=1 vite build --base=/swipe-pay-test/ && cp dist-pages/index.html dist-pages/404.html && touch dist-pages/.nojekyll"
+    "build:pages": "tsc -b && VITE_STATIC=1 vite build --base=/swipe-pay-test/ && cp dist-pages/index.html dist-pages/404.html && touch dist-pages/.nojekyll",
+    "gen:migrations": "node scripts/gen-migrations.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.16",
