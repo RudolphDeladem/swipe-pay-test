@@ -168,7 +168,7 @@ export function Receive() {
 export function payPathFrom(raw: string, src: "qr" | "nfc"): string | null {
   try {
     const url = new URL(raw.trim(), window.location.origin);
-    const m = url.pathname.match(/^\/pay\/@?([a-z0-9._]{3,20})\/?$/i);
+    const m = url.pathname.match(/\/pay\/@?([a-z0-9._]{3,20})\/?$/i);
     if (!m) return null;
     const p = new URLSearchParams(url.search);
     if (src === "qr" && !p.get("d")) p.set("src", "qr");

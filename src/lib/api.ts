@@ -49,10 +49,16 @@ export class ApiError extends Error {
   }
 }
 
+/** Static hosting (GitHub Pages): the API runs in the browser instead of on a server. */
+export const STATIC_MODE = import.meta.env.VITE_STATIC === "1";
+
+/** App base path, e.g. "/" on Netlify or "/swipe-pay-test/" on GitHub Pages. */
+export const BASE = import.meta.env.BASE_URL;
+
 export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(path, {
+    const init: RequestInit = {
       method,
       credentials: "same-origin",
       headers: {
@@ -60,7 +66,8 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
         ...(body !== undefined ? { "content-type": "application/json" } : {}),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    };
+    res = STATIC_MODE ? await (await import("./localBackend")).localFetch(path, init) : await fetch(path, init);
   } catch {
     throw new ApiError(0, "network", "You appear to be offline. Check your connection and try again.");
   }
@@ -74,7 +81,7 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
 
 /** Absolute payment link for a user (optionally bound to an NFC device code). */
 export function payLink(username: string, deviceCode?: string): string {
-  const url = new URL(`/pay/@${username}`, window.location.origin);
+  const url = new URL(`${BASE}pay/@${username}`, window.location.origin);
   if (deviceCode) url.searchParams.set("d", deviceCode);
   return url.toString();
 }

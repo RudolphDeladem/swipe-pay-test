@@ -1,10 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { avatarClass, initials } from "../lib/format";
+import { STATIC_MODE } from "../lib/api";
 import { Backspace, ChevronLeft, Activity, Home, User } from "./icons";
 
 export function DemoRibbon() {
-  return <div className="demo-ribbon" role="note">Demo mode · Simulated funds, not real money</div>;
+  return (
+    <div className="demo-ribbon" role="note">
+      Demo mode · Simulated funds, not real money
+      {STATIC_MODE && <><br />Offline preview: accounts are saved in this browser only</>}
+    </div>
+  );
 }
 
 export function Avatar({ name, username, size }: { name: string; username: string; size?: "lg" }) {

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
+import { BASE } from "./lib/api";
 import { DemoRibbon, Spinner } from "./components/ui";
 import Home from "./pages/Home";
 import { Login, Signup, Welcome } from "./pages/Auth";
@@ -35,7 +36,7 @@ const authed = (el: ReactNode) => <RequireAuth>{el}</RequireAuth>;
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE.replace(/\/$/, "") || "/"}>
       <AuthProvider>
         <div className="app">
           <DemoRibbon />

@@ -32,6 +32,14 @@ A mobile-first digital wallet with NFC and QR tap-to-pay, built under **Swipe.lt
 - **API:** one Netlify Function (`netlify/functions/api.mts`) routing `/api/*` to `server/`.
 - **Database:** Netlify Database (managed Postgres). The schema lives in `netlify/database/migrations/` and is applied automatically on deploy.
 
+## GitHub Pages preview
+
+`npm run build:pages` produces a fully static build in `dist-pages/`, published on the `gh-pages` branch at
+https://rudolphdeladem.github.io/swipe-pay-test/. GitHub Pages can't run servers, so this build runs the
+same API router in the browser against PGlite (Postgres compiled to WebAssembly), saved in IndexedDB.
+Every flow works, but **accounts live in that one browser**: create several accounts and switch between
+them on the same device. Cross-device payments need the Netlify deployment.
+
 ## Develop
 
 ```bash

@@ -1,4 +1,4 @@
-import { hashSecret, verifySecret, newSessionToken, sha256, newReference, newDeviceCode } from "./crypto.js";
+import { hashSecret, verifySecret, newSessionToken, sha256, newReference, newDeviceCode, DUMMY_HASH } from "./crypto.js";
 
 /** Minimal subset of pg.Pool used here (works with pg and @netlify/database pools). */
 export interface QueryResult<T> {
@@ -93,7 +93,7 @@ async function createSession(db: Queryable, userId: number): Promise<string> {
   const token = newSessionToken();
   await db.query(
     `INSERT INTO sessions (token_hash, user_id, expires_at) VALUES ($1, $2, NOW() + ($3 || ' days')::interval)`,
-    [sha256(token), userId, String(SESSION_DAYS)],
+    [await sha256(token), userId, String(SESSION_DAYS)],
   );
   return token;
 }
@@ -153,7 +153,7 @@ export async function login(
   const invalid = new ApiError(401, "invalid_credentials", "Incorrect username or password.");
   if (!row) {
     // Spend comparable time so response timing doesn't reveal which usernames exist.
-    await verifySecret(password, "scrypt$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+    await verifySecret(password, DUMMY_HASH);
     throw invalid;
   }
   if (row.login_locked_until && row.login_locked_until > new Date())
@@ -179,13 +179,13 @@ export async function getSessionUser(pool: Pool, token: string | undefined): Pro
   const { rows } = await pool.query<UserRow>(
     `SELECT u.id, u.username, u.full_name FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = $1 AND s.expires_at > NOW()`,
-    [sha256(token)],
+    [await sha256(token)],
   );
   return rows[0] ? toPublic(rows[0]) : null;
 }
 
 export async function logout(pool: Pool, token: string | undefined): Promise<void> {
-  if (token) await pool.query(`DELETE FROM sessions WHERE token_hash = $1`, [sha256(token)]);
+  if (token) await pool.query(`DELETE FROM sessions WHERE token_hash = $1`, [await sha256(token)]);
 }
 
 // ---------------------------------------------------------------- wallet

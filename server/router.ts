@@ -40,7 +40,17 @@ type Handler = (ctx: {
   url: URL;
   user: svc.PublicUser | null;
   token: string | undefined;
+  /** Returns the Set-Cookie header for a new (or cleared, when empty) session. */
+  session: (token: string, maxAge: number) => Record<string, string>;
 }) => Promise<Response>;
+
+export interface HandleOptions {
+  /** Called whenever a session is issued or cleared. Used by the in-browser build, where
+   * Set-Cookie can't be read from a constructed Response. */
+  onSession?: (token: string | null) => void;
+  /** Session token supplied directly instead of via the Cookie header (in-browser build). */
+  sessionToken?: string | null;
+}
 
 interface Route {
   method: string;
@@ -65,17 +75,17 @@ const requireUser = (u: svc.PublicUser | null): svc.PublicUser => {
 };
 
 // ---- auth
-route("POST", "/api/auth/signup", false, async ({ req, pool }) => {
+route("POST", "/api/auth/signup", false, async ({ req, pool, session }) => {
   const { user, token } = await svc.signup(pool, await body(req));
-  return json({ user }, 201, { "set-cookie": sessionCookie(req, token, svc.SESSION_DAYS * 86400) });
+  return json({ user }, 201, session(token, svc.SESSION_DAYS * 86400));
 });
-route("POST", "/api/auth/login", false, async ({ req, pool }) => {
+route("POST", "/api/auth/login", false, async ({ req, pool, session }) => {
   const { user, token } = await svc.login(pool, await body(req));
-  return json({ user }, 200, { "set-cookie": sessionCookie(req, token, svc.SESSION_DAYS * 86400) });
+  return json({ user }, 200, session(token, svc.SESSION_DAYS * 86400));
 });
-route("POST", "/api/auth/logout", false, async ({ req, pool, token }) => {
+route("POST", "/api/auth/logout", false, async ({ pool, token, session }) => {
   await svc.logout(pool, token);
-  return json({ ok: true }, 200, { "set-cookie": sessionCookie(req, "", 0) });
+  return json({ ok: true }, 200, session("", 0));
 });
 
 // ---- wallet
@@ -130,7 +140,7 @@ route("GET", "/api/pay/:username", false, async ({ pool, params, url }) =>
   json(await svc.resolvePayLink(pool, params.username, url.searchParams.get("d"))),
 );
 
-export async function handle(req: Request, pool: Pool): Promise<Response> {
+export async function handle(req: Request, pool: Pool, opts: HandleOptions = {}): Promise<Response> {
   const url = new URL(req.url);
   try {
     // CSRF guard: state-changing requests must be same-origin JSON requests from our client.
@@ -149,10 +159,14 @@ export async function handle(req: Request, pool: Pool): Promise<Response> {
 
     const m = path.match(r.pattern)!;
     const params = Object.fromEntries(r.keys.map((k, i) => [k, m[i + 1]]));
-    const token = getCookie(req, SESSION_COOKIE);
+    const token = opts.sessionToken ?? getCookie(req, SESSION_COOKIE);
     const user = r.auth || token ? await svc.getSessionUser(pool, token) : null;
     if (r.auth && !user) throw new ApiError(401, "unauthorized", "Please sign in.");
-    return await r.handler({ req, pool, params, url, user, token });
+    const session = (t: string, maxAge: number) => {
+      opts.onSession?.(t || null);
+      return { "set-cookie": sessionCookie(req, t, maxAge) };
+    };
+    return await r.handler({ req, pool, params, url, user, token, session });
   } catch (err) {
     if (err instanceof ApiError) return json({ error: { code: err.code, message: err.message, ...err.extra } }, err.status);
     console.error("Unhandled API error", err);
