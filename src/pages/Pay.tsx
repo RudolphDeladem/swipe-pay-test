@@ -335,6 +335,7 @@ export function Tap() {
             {supported
               ? "Most phones also open Swipe tags automatically when unlocked. No need to open this screen first."
               : "Your browser can't read NFC directly, but your phone can: unlock it and hold it near the tag. The payment link opens automatically (iPhone XS+ and most Android phones)."}
+            {" "}On Android, <Link to="/install" style={{ color: "var(--green)", fontWeight: 700 }}>install Swipe Pay</Link> so taps open the app directly.
           </div>
         </div>
       </div>

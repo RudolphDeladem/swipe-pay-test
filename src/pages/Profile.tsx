@@ -4,6 +4,7 @@ import { api, ApiError, payLink, type Device } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { cedis } from "../lib/money";
 import { dateTime } from "../lib/format";
+import { isIOS, isStandalone, useInstallPrompt } from "../lib/install";
 import { Avatar, NavBar, Spinner, TabBar, copyText, useToast } from "../components/ui";
 import { Check, ChevronRight, Copy, Info, LogOut, Nfc, Plus, ScanQr, Smartphone, Tag, Trash, Wallet } from "../components/icons";
 
@@ -14,6 +15,7 @@ export function Profile() {
   const items = [
     { to: "/profile/devices", icon: Nfc, cls: "c-green", t1: "Devices", t2: "Link NFC tags to your payment page" },
     { to: "/receive", icon: ScanQr, cls: "c-blue", t1: "My payment link & QR", t2: `${window.location.host}/pay/@${me.user.username}` },
+    { to: "/install", icon: Smartphone, cls: "c-purple", t1: "Install the app", t2: isStandalone() ? "Installed ✓" : "Open taps straight in Swipe Pay" },
     { to: "/about", icon: Info, cls: "c-amber", t1: "About this demo", t2: "How Swipe Pay works" },
   ];
   return (
@@ -290,6 +292,52 @@ export function About() {
         Real-money transfers, Mobile Money deposits and withdrawals require payment infrastructure and regulatory arrangements before launch.
       </div>
       <p className="footer-note">Swipe.ltd · A product of Spark Point Technology</p>
+    </div>
+  );
+}
+
+export function InstallApp() {
+  const { canInstall, install } = useInstallPrompt();
+  const [toast, showToast] = useToast();
+  const installed = isStandalone();
+  const ios = isIOS();
+  return (
+    <div className="screen">
+      <NavBar title="Install the app" back="/profile" />
+      <div className="pin-head">
+        <div className="circle c-green"><Smartphone size={40} /></div>
+        <h2>{installed ? "Swipe Pay is installed" : "Get Swipe Pay on your home screen"}</h2>
+        <p style={{ maxWidth: 320 }}>
+          {ios
+            ? "Adds Swipe Pay to your home screen so it opens full-screen like an app."
+            : "Once installed, tapping a Swipe NFC device or opening a payment link opens Swipe Pay directly instead of Chrome."}
+        </p>
+      </div>
+      <div className="spacer" />
+      {installed ? (
+        <div className="info center">You're using the installed app ✓</div>
+      ) : canInstall ? (
+        <button className="btn btn-primary" onClick={async () => (await install()) && showToast("Installed! Find Swipe Pay on your home screen")}>
+          <Smartphone size={20} /> Install Swipe Pay
+        </button>
+      ) : ios ? (
+        <div className="card">
+          <ol className="steps">
+            <li>Open this page in <b>Safari</b>.</li>
+            <li>Tap the <b>Share</b> button, then <b>Add to Home Screen</b>.</li>
+          </ol>
+          <div className="warn" style={{ fontSize: 13 }}>On iPhone, tapping an NFC tag still opens Safari first. Apple only lets App Store apps open directly.</div>
+        </div>
+      ) : (
+        <div className="card">
+          <ol className="steps">
+            <li>Open this page in <b>Chrome</b> on your Android phone.</li>
+            <li>Tap the <b>⋮</b> menu, then <b>Install app</b> (or <b>Add to Home screen → Install</b>).</li>
+            <li>Tap a Swipe tag. If Android asks, choose <b>Swipe Pay</b> and <b>Always</b>.</li>
+          </ol>
+        </div>
+      )}
+      {toast}
     </div>
   );
 }

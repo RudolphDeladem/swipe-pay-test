@@ -8,7 +8,7 @@ import { Login, Signup, Welcome } from "./pages/Auth";
 import { SendMoney, SendTo } from "./pages/Send";
 import { PayPage, Receive, Scan, Tap } from "./pages/Pay";
 import { Activity, Notifications, Receipt } from "./pages/Activity";
-import { About, AddDevice, ComingSoon, DeviceSetup, Devices, Profile } from "./pages/Profile";
+import { About, AddDevice, ComingSoon, DeviceSetup, Devices, InstallApp, Profile } from "./pages/Profile";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { me, loading } = useAuth();
@@ -61,6 +61,7 @@ export default function App() {
             <Route path="/profile/devices/new" element={authed(<AddDevice />)} />
             <Route path="/profile/devices/:id" element={authed(<DeviceSetup />)} />
             <Route path="/about" element={<About />} />
+            <Route path="/install" element={<InstallApp />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

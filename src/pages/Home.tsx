@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { useInstallPrompt } from "../lib/install";
 import { cedis } from "../lib/money";
 import { Logo, TabBar, useToast } from "../components/ui";
-import { Bell, ChevronRight, Eye, EyeOff, Plus, ScanQr, Send, ShieldCheck, Wallet } from "../components/icons";
+import { Bell, ChevronRight, Eye, EyeOff, Plus, ScanQr, Send, ShieldCheck, Smartphone, Wallet } from "../components/icons";
 
 function useBalanceVisibility() {
   const [hidden, setHidden] = useState(() => {
@@ -47,6 +48,7 @@ export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const [toast, showToast] = useToast();
+  const { canInstall, install } = useInstallPrompt();
   useLiveRefresh();
 
   useEffect(() => {
@@ -100,6 +102,14 @@ export default function Home() {
           </Link>
         ))}
       </div>
+
+      {canInstall && (
+        <button className="pay-card green" onClick={install} style={{ marginTop: 18 }}>
+          <div className="circle c-green" style={{ width: 44, height: 44, background: "#fff" }}><Smartphone size={24} /></div>
+          <div className="grow"><div className="t1">Install Swipe Pay</div><div className="t2">Taps on Swipe devices then open the app directly</div></div>
+          <ChevronRight />
+        </button>
+      )}
 
       <p className="footer-note">Signed in as @{me.user.username}. Demo balances are simulated and have no cash value.</p>
       {toast}
