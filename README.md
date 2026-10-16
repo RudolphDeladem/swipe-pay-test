@@ -32,6 +32,15 @@ A mobile-first digital wallet with NFC and QR tap-to-pay, built under **Swipe.lt
 - **API:** one Netlify Function (`netlify/functions/api.mts`) routing `/api/*` to `server/`.
 - **Database:** Netlify Database (managed Postgres). The schema lives in `netlify/database/migrations/` and is applied automatically on deploy.
 
+## Deploy on Vercel (free)
+
+1. On vercel.com, choose **Add New → Project** and import this GitHub repo. Keep the defaults; `vercel.json` sets everything.
+2. In the project, open **Storage → Create Database → Neon (Postgres)** and connect it to the project. This sets `DATABASE_URL`.
+3. **Redeploy** (Deployments → ⋯ → Redeploy) so the new variable is picked up.
+
+The API runs as one function (`api/index.ts`) that creates the database tables on first start.
+Every device then shares the same accounts.
+
 ## GitHub Pages preview
 
 `npm run build:pages` produces a fully static build in `dist-pages/`, published on the `gh-pages` branch at

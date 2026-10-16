@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "noUnusedLocals": true
   },
-  "include": ["server", "netlify/functions", "tests", "vite.config.ts"]
+  "include": ["server", "netlify/functions", "api", "tests", "vite.config.ts"]
 }
