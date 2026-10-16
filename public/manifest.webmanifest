@@ -1,0 +1,9 @@
+{
+  "name": "Swipe Pay (Demo)",
+  "short_name": "Swipe Pay",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8f7",
+  "theme_color": "#0a8a4f",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

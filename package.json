@@ -1,0 +1,41 @@
+{
+  "name": "swipe-pay",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Swipe Pay \u2014 demo digital wallet with NFC/QR tap-to-pay (Swipe.ltd, Spark Point Technology)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -b",
+    "test:e2e": "node scripts/e2e.mjs",
+    "serve:local": "tsx scripts/serve-local.ts"
+  },
+  "dependencies": {
+    "@netlify/database": "^2.0.1",
+    "@netlify/functions": "^6.0.2",
+    "jsqr": "^1.4.0",
+    "pg": "^8.23.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@netlify/database-dev": "^1.0.1",
+    "@netlify/vite-plugin": "^3.0.1",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "playwright-core": "^1.64.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
